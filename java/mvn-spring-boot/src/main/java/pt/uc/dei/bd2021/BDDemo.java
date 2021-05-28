@@ -17,15 +17,15 @@
  */
 package pt.uc.dei.bd2021;
 
+import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
 
 import org.apache.tomcat.util.json.Token;
 import org.slf4j.Logger;
@@ -39,9 +39,33 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class BDDemo {
+public class BDDemo{
 
     private static final Logger logger = LoggerFactory.getLogger(BDDemo.class);
+    public ArrayList<String> tokens = new ArrayList();
+
+    /**
+     * GENERATE TOKEN
+     *
+     * Este metodo devolve uma string alfanumerica
+     * que ira ser utilizada com token de validação
+     * de autenticacao.
+     *
+     * @return
+     */
+    public String generateNemToken(){
+        int leftLimit = 48; // numeral '0'
+        int rightLimit = 122; // letter 'z'
+        int targetStringLength = 10;
+        Random random = new Random();
+
+        String generatedString = random.ints(leftLimit, rightLimit + 1)
+                .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97))
+                .limit(targetStringLength)
+                .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                .toString();
+        return generatedString;
+    }
 
     @GetMapping("/")
     public String landing() {
@@ -279,4 +303,87 @@ public class BDDemo {
         }
         return "Failed";
     }
+
+    /**
+     * PUT autenticacao
+     *
+     *
+     */
+    @PutMapping(value = "/dbproj/user", consumes = "application/json")
+    @ResponseBody
+    public String authUser(@RequestBody Map<String, Object> payload) {
+
+        Connection conn = RestServiceApplication.getConnection();
+
+        if (!payload.containsKey("username") && !payload.containsKey("password")) {
+            logger.warn("Preciso username e pass para login");
+            return "Username/Password missing";
+        }
+
+        try (PreparedStatement stmt = conn.prepareStatement("SELECT username, password"
+                                                                + " FROM utilizador"
+                                                                + " WHERE  username = ? and password = ? ")) {
+            stmt.setString(1, (String) payload.get("username"));
+            stmt.setString(2, (String) payload.get("password"));
+            ResultSet rows = stmt.executeQuery();
+            if(rows.next()){
+                String token = generateNemToken();
+                tokens.add(token);
+                return "authToken: " + token;
+            }else{
+                return "erro:";
+            }
+
+        } catch (SQLException ex) {
+            logger.error("Error in DB", ex);
+        }
+        return "erro:";
+    }
+
+
+    /**
+     * POST CRIAR LEILAO
+     *
+     *
+     */
+    @PostMapping(value = "/dbproj/leilao", consumes = "application/json")
+    @ResponseBody
+    public String createAuction(@RequestBody Map<String, Object> payload) {
+        Connection conn = RestServiceApplication.getConnection();
+
+        if(payload.get("authToken") == null || tokens.contains(payload.get("authToken")) == false){
+            return "authError";
+        }
+        Map<String, Object> content = new HashMap<>();
+
+        try (PreparedStatement ps = conn.prepareStatement(""
+                + "INSERT INTO vendedor_artigo (artigo_nome, artigo_precoinicial, artigo_datalimite, utilizador_username)"
+                + "         VALUES ( ? , ? , ? , ?)")) {
+            ps.setString(1, (String) payload.get("nome"));
+            ps.setFloat(2, (Float) payload.get("preco_inicial"));
+            ps.setString(3, (String) payload.get("data_limite"));
+            ps.setString(4, (String) payload.get("username"));
+            int affectedRows = ps.executeUpdate();
+            conn.commit();
+
+            if (affectedRows == 1) {
+                return "Inserted!";
+            }
+        } catch (SQLException ex) {
+            logger.error("Error in DB", ex);
+            try {
+                conn.rollback();
+            } catch (SQLException ex1) {
+                logger.warn("Couldn't rollback", ex);
+            }
+        } finally {
+            try {
+                conn.close();
+            } catch (SQLException ex) {
+                logger.error("Error in DB", ex);
+            }
+        }
+        return "Failed";
+    }
+
 }
