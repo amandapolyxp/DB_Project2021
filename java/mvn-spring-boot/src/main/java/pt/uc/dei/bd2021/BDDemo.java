@@ -106,9 +106,7 @@ public class BDDemo {
      */
     @GetMapping(value = "/departments/{ndep}", produces = "application/json")
     @ResponseBody
-    public Map<String, Object> getDepartment(
-            @PathVariable("ndep") int ndep
-    ) {
+    public Map<String, Object> getDepartment(@PathVariable("ndep") int ndep) {
         logger.info("###              DEMO: GET /departments              ###");
         Connection conn = RestServiceApplication.getConnection();
 
@@ -130,20 +128,6 @@ public class BDDemo {
     }
 
     /**
-     * POST para criar user
-     * recebe username e password
-     *
-     * @param payload
-     * @return
-     */
-    @PostMapping(value = "/dbproj/user/", consumes = "application/json")
-    @ResponseBody
-    public String registerUser(@RequestBody Map<String, Object> payload){
-
-        return "success";
-    }
-
-    /**
      * Demo POST
      *
      *
@@ -158,9 +142,7 @@ public class BDDemo {
      */
     @PostMapping(value = "/departments/", consumes = "application/json")
     @ResponseBody
-    public String createDepartment(
-            @RequestBody Map<String, Object> payload
-    ) {
+    public String createDepartment(@RequestBody Map<String, Object> payload) {
 
         logger.info("###              DEMO: POST /departments              ###");
         Connection conn = RestServiceApplication.getConnection();
@@ -211,9 +193,7 @@ public class BDDemo {
      */
     @PutMapping(value = "/departments/", consumes = "application/json")
     @ResponseBody
-    public String updateDepartment(
-            @RequestBody Map<String, Object> payload
-    ) {
+    public String updateDepartment(@RequestBody Map<String, Object> payload) {
         Token token = new Token();
         logger.info("###              DEMO: PUT /departments               ###");
 
@@ -253,6 +233,48 @@ public class BDDemo {
                 conn.close();
             } catch (SQLException ex) {
                 logger.error("Error in DB", ex);
+            }
+        }
+        return "Failed";
+    }
+
+    /**
+     * POST para criar user
+     * recebe username e password
+     *
+     * @param payload
+     * @return
+     */
+    @PostMapping(value = "/dbproj/user", consumes = "application/json")
+    @ResponseBody
+    public String registerUser(@RequestBody Map<String, Object> payload){
+
+        Connection conn = RestServiceApplication.getConnection();
+
+        try (PreparedStatement ps = conn.prepareStatement(""
+                + "INSERT INTO utilizador (username, password, email) "
+                + "         VALUES (  ? ,   ? ,   ? )")) {
+            ps.setString(1, (String) payload.get("username"));
+            ps.setString(2, (String) payload.get("password"));
+            ps.setString(3, (String) payload.get("email"));
+            int affectedRows = ps.executeUpdate();
+            conn.commit();
+
+            if (affectedRows == 1) {
+                return "User Created!";
+            }
+        } catch (SQLException ex) {
+            logger.error("Creating User - Error in DB", ex);
+            try {
+                conn.rollback();
+            } catch (SQLException ex1) {
+                logger.warn("Creating User - Couldn't rollback", ex);
+            }
+        } finally {
+            try {
+                conn.close();
+            } catch (SQLException ex) {
+                logger.error("Creating User - Error in DB - Final", ex);
             }
         }
         return "Failed";
