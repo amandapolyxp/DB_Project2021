@@ -17,13 +17,8 @@
  */
 package pt.uc.dei.bd2021;
 
-import java.nio.charset.Charset;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.time.LocalDate;
+import java.sql.*;
+
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -65,6 +60,26 @@ public class BDDemo{
                 .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
                 .toString();
         return generatedString;
+    }
+
+    /**
+     * GENERATE EAN
+     *
+     *
+     * @return
+     */
+    public Long generateEAN(){
+
+        int leftLimit = 48; // numeral '0'
+        int rightLimit = 57; // letter 'z'
+        int targetStringLength = 13;
+        Random random = new Random();
+
+        String generatedString = random.ints(leftLimit, rightLimit + 1)
+                .limit(targetStringLength)
+                .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                .toString();
+        return Long.parseLong(generatedString);
     }
 
     @GetMapping("/")
@@ -357,12 +372,22 @@ public class BDDemo{
         Map<String, Object> content = new HashMap<>();
 
         try (PreparedStatement ps = conn.prepareStatement(""
-                + "INSERT INTO vendedor_artigo (artigo_nome, artigo_precoinicial, artigo_datalimite, utilizador_username)"
-                + "         VALUES ( ? , ? , ? , ?)")) {
-            ps.setString(1, (String) payload.get("nome"));
-            ps.setFloat(2, (Float) payload.get("preco_inicial"));
-            ps.setString(3, (String) payload.get("data_limite"));
-            ps.setString(4, (String) payload.get("username"));
+                + "INSERT INTO vendedor_artigo (artigo_nome, artigo_precoinicial, artigo_datalimite, artigo_ean, utilizador_username)"
+                + "         VALUES ( ? , ? , ? , ?, ?)")) {
+            ps.setString(1, (String) payload.get("nome_artigo"));
+            ps.setDouble(2, (Double) payload.get("preco_inicial"));
+
+            int year = (int)payload.get("year");
+            int month = (int)payload.get("month");
+            int day = (int)payload.get("day");
+            int hour = (int)payload.get("hour");
+            int min = (int)payload.get("minute");
+            LocalDateTime date = LocalDateTime.of(year, month, day, hour, min);
+            Timestamp time = Timestamp.valueOf(date);
+
+            ps.setTimestamp(3, time);
+            ps.setLong(4, generateEAN());
+            ps.setString(5, (String) payload.get("username"));
             int affectedRows = ps.executeUpdate();
             conn.commit();
 
