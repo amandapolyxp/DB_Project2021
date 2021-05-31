@@ -673,12 +673,13 @@ public class BDDemo {
                                 try (PreparedStatement insertStmt = conn.prepareStatement("INSERT INTO licitacao (comprador_username, artigo_ean, valor )" +
                                         "VALUES (?, ?, ? );" +
                                         "UPDATE vendedor_artigo " +
-                                        "SET artigo_precoatual = ?")) {
+                                        "SET artigo_precoatual = ? WHERE artigo_ean = ?")) {
 
                                     insertStmt.setString(1, username);
                                     insertStmt.setLong(2, leilaoID);
                                     insertStmt.setFloat(3, licitacao);
                                     insertStmt.setFloat(4, licitacao);
+                                    insertStmt.setLong(5, leilaoID);
                                     int result = insertStmt.executeUpdate();
                                     conn.commit();
                                     if (result >= 1) {
@@ -847,12 +848,24 @@ public class BDDemo {
     public String terminalLeiloes(){
         Connection conn = RestServiceApplication.getConnection();
         try(PreparedStatement ps = conn.prepareStatement("UPDATE vendedor_artigo " +
-                "SET artigo_terminado = 'False' "+
+                "SET artigo_terminado = 'True' "+
                 "WHERE artigo_datalimite >= ?")){
             ps.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
             int res =  ps.executeUpdate();
             conn.commit();
             if(res >=1){
+                PreparedStatement ps1 = conn.prepareStatement("SELECT artigo_precoatual, artigo_ean FROM vendedor_artigo " +
+                        "WHERE artigo_terminado = 'True' AND vencedor = null ");
+                ResultSet resultSet = ps1.executeQuery();
+                while (resultSet.next()){
+                    PreparedStatement ps2 = conn.prepareStatement("UPDATE vendedor_artigo " +
+                            "SET vencedor = (SELECT comprador_username FROM licitacao " +
+                            "WHERE artigo_ean = ? AND valor = ? AND valida = 'True') " +
+                            "WHERE artigo_ean = ?");
+                    ps2.setLong(1, resultSet.getLong("artigo_ean"));
+                    ps2.setDouble(2, resultSet.getDouble("artigo_precoatual"));
+                    ps2.setLong(3, resultSet.getLong("artigo_ean"));
+                }
                 return "done";
             }
         } catch (SQLException throwables) {
@@ -860,5 +873,7 @@ public class BDDemo {
         }
         return "failed";
     }
+
+
 
 }
