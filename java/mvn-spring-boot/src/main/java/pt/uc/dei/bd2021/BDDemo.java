@@ -349,6 +349,13 @@ public class BDDemo {
             int affectedRows = ps.executeUpdate();
             conn.commit();
 
+            PreparedStatement ps1 = conn.prepareStatement(""
+                    + "INSERT INTO comprador (utilizador_username) "
+                    + "VALUES (?)");
+            ps1.setString(1,(String)payload.get("username"));
+            ps1.executeUpdate();
+            conn.commit();
+
             if (affectedRows == 1) {
                 return "User Created!";
             }
@@ -450,6 +457,7 @@ public class BDDemo {
             conn.commit();
 
             if (affectedRows == 1) {
+                //TODO atualizar score
                 return "Inserted!";
             }
         } catch (SQLException ex) {
@@ -910,11 +918,19 @@ public class BDDemo {
                 while (resultSet.next()){
                     PreparedStatement ps2 = conn.prepareStatement("UPDATE vendedor_artigo " +
                             "SET vencedor = (SELECT comprador_username FROM licitacao " +
-                            "WHERE artigo_ean = ? AND valor = ? AND valida = 'True') " +
+                            "WHERE artigo_ean = ? AND valor = ? AND valida = 'True'), score_vend = 1 " +
                             "WHERE artigo_ean = ?");
                     ps2.setLong(1, resultSet.getLong("artigo_ean"));
                     ps2.setDouble(2, resultSet.getDouble("artigo_precoatual"));
                     ps2.setLong(3, resultSet.getLong("artigo_ean"));
+                    ps2.executeUpdate();
+
+                    PreparedStatement ps3 = conn.prepareStatement("UPDATE comprador SET score_comp = score_comp + 1 " +
+                            "WHERE utilizador_username = (SELECT comprador_username FROM licitacao " +
+                            "WHERE artigo_ean = ? AND valor = ? AND valida = 'True' )");
+                    ps3.setLong(1, resultSet.getLong("artigo_ean"));
+                    ps3.setDouble(2, resultSet.getDouble("artigo_precoatual"));
+                    ps3.executeUpdate();
                 }
                 return "done";
             }
@@ -976,7 +992,7 @@ public class BDDemo {
      * PUT Canclear LEILOES
      * @return
      */
-    @PutMapping(value = "/dbproj/leiloes/admin/cancelar/{leilaoID}")
+    @PutMapping(value = "/dbproj/admin/cancelar/{leilaoID}")
     @ResponseBody
     public String terminalLeiloes(@PathVariable("leilaoID") Long leilaoID,
                                   @RequestParam String token){
@@ -1022,5 +1038,8 @@ public class BDDemo {
         return "failed";
     }
 
-
+    /**
+     * MOSTRAR ESTATISTICA
+     */
+    
 }
