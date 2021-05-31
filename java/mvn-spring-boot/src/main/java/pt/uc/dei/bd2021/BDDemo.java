@@ -837,4 +837,28 @@ public class BDDemo {
         }
         return "failed";
     }
+
+    /**
+     * PUT TERMINAR LEILOES
+     * @return
+     */
+    @PutMapping(value = "/dbproj/leiloes/terminar")
+    @ResponseBody
+    public String terminalLeiloes(){
+        Connection conn = RestServiceApplication.getConnection();
+        try(PreparedStatement ps = conn.prepareStatement("UPDATE vendedor_artigo " +
+                "SET artigo_terminado = 'False' "+
+                "WHERE artigo_datalimite >= ?")){
+            ps.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
+            int res =  ps.executeUpdate();
+            conn.commit();
+            if(res >=1){
+                return "done";
+            }
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return "failed";
+    }
+
 }
