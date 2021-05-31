@@ -31,6 +31,15 @@ import org.springframework.web.bind.annotation.*;
 class User{
     private String username;
     private String token;
+    private boolean admin;
+
+    public boolean isAdmin() {
+        return admin;
+    }
+
+    public void setAdmin(boolean admin) {
+        this.admin = admin;
+    }
 
     public String getUsername() {
         return username;
@@ -62,6 +71,17 @@ public class BDDemo {
             }
         }
         return null;
+    }
+
+    public boolean checkAdmin(String token){
+        for(User user : tokens){
+            if(user.getToken().equals(token)){
+                if(user.isAdmin()){
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -366,7 +386,7 @@ public class BDDemo {
             return "Username/Password missing";
         }
 
-        try (PreparedStatement stmt = conn.prepareStatement("SELECT username, password"
+        try (PreparedStatement stmt = conn.prepareStatement("SELECT username, password, admin"
                 + " FROM utilizador"
                 + " WHERE  username = ? and password = ? ")) {
             stmt.setString(1, (String) payload.get("username"));
@@ -377,10 +397,11 @@ public class BDDemo {
                 User user = new User();
                 user.setToken(token);
                 user.setUsername((String)payload.get("username"));
+                user.setAdmin(rows.getBoolean("admin"));
                 tokens.add(user);
                 return "authToken: " + token;
             } else {
-                return "erro:";
+                return "erro";
             }
 
         } catch (SQLException ex) {
@@ -950,5 +971,56 @@ public class BDDemo {
 
         return content;
     }
+
+    /**
+     * PUT Canclear LEILOES
+     * @return
+     */
+    @PutMapping(value = "/dbproj/leiloes/admin/cancelar/{leilaoID}")
+    @ResponseBody
+    public String terminalLeiloes(@PathVariable("leilaoID") Long leilaoID,
+                                  @RequestParam String token){
+        Connection conn = RestServiceApplication.getConnection();
+        String user;
+        if (findToken(token) == null) {
+            return "AuthError";
+        } else {
+            user = findToken(token);
+        }
+        if (checkAdmin(token)) {
+            try (PreparedStatement ps = conn.prepareStatement("UPDATE vendedor_artigo " +
+                    "SET artigo_terminado = 'True' " +
+                    "WHERE artigo_ean = ?")) {
+                ps.setLong(1, leilaoID);
+                int res = ps.executeUpdate();
+                conn.commit();
+                if (res >= 1) {
+                    PreparedStatement ps1 = conn.prepareStatement("SELECT DISTINCT comprador_username FROM licitacao WHERE artigo_ean = ?");
+                    ps1.setLong(1, leilaoID);
+                    ResultSet resultSet = ps1.executeQuery();
+                    while (resultSet.next()) {
+                        PreparedStatement ps2 = conn.prepareStatement("INSERT INTO mensagem (mensagem, utilizador_username) VALUES (?, ?)");
+                        ps2.setString(1, "Leilao Cancelado pela Administracao: " + leilaoID);
+                        ps2.setString(2, resultSet.getString("comprador_username"));
+                    }
+                }
+            } catch (SQLException ex) {
+                logger.error("error in DB", ex);
+                try {
+                    conn.rollback();
+                } catch (SQLException ex1) {
+                    logger.warn("Couldn't rollback", ex);
+                }
+            } finally {
+                try {
+                    conn.close();
+                } catch (SQLException ex) {
+                    logger.error("Error in DB", ex);
+                }
+            }
+        }
+        return "failed";
+    }
+
 
 }
