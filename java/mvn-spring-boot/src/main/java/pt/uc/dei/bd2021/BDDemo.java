@@ -1041,5 +1041,9 @@ public class BDDemo {
     /**
      * MOSTRAR ESTATISTICA
      */
-    
+    @GetMapping(value = "/dbproj/admin/stats")
+    @ResponseBody
+    public Map<String, Object> printStats(){
+        
+    }
 }
