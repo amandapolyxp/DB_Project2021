@@ -769,6 +769,21 @@ public class BDDemo {
                     conn.commit();
 
                     if (affectedRows == 1) {
+                        PreparedStatement ps2 = conn.prepareStatement("SELECT DISTINCT comprador_username FROM licitacao WHERE artigo_ean = ? AND valida = 'True' ");
+                        ps2.setLong(1, leilaoId);
+                        ResultSet rows = ps2.executeQuery();
+                        int result = 0;
+                        while (rows.next()){
+                            PreparedStatement ps1 = conn.prepareStatement("INSERT INTO mensagem (mensagem, utilizador_username) " +
+                                    "VALUES (?, ?)");
+                            ps1.setString(1, "Este leilao foi editado: " + leilaoId);
+                            ps1.setString(2, rows.getString("comprador_username"));
+                            result += ps1.executeUpdate();
+                            conn.commit();
+                        }
+                        if(result >=1){
+                            return "inserted";
+                        }
                         //TODO: enviar mensagem aos utilizadores
                         return "Inserted!";
                     }
@@ -819,9 +834,23 @@ public class BDDemo {
             int affectedRows = ps.executeUpdate();
             conn.commit();
             if(affectedRows == 1){
-                return "inserted";
+                PreparedStatement ps2 = conn.prepareStatement("SELECT DISTINCT username, utilizador_username FROM mural, vendedor_artigo WHERE mural.artigo_ean = ? OR vendedor_artigo.artigo_ean = ?");
+                ps2.setLong(1, leilaoId);
+                ps2.setLong(2, leilaoId);
+                ResultSet rows = ps2.executeQuery();
+                int result = 0;
+                while (rows.next()){
+                    PreparedStatement ps1 = conn.prepareStatement("INSERT INTO mensagem (mensagem, utilizador_username) " +
+                            "VALUES (?, ?)");
+                    ps1.setString(1, "Nova mensagem no mural do artigo: " + leilaoId);
+                    ps1.setString(2, rows.getString("username"));
+                    result += ps1.executeUpdate();
+                    conn.commit();
+                }
+                if(result >=1){
+                    return "inserted";
+                }
             }
-
         } catch (SQLException ex) {
             logger.error("error in DB", ex);
             try {
@@ -868,12 +897,58 @@ public class BDDemo {
                 }
                 return "done";
             }
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+        } catch (SQLException ex) {
+            logger.error("error in DB", ex);
+            try {
+                conn.rollback();
+            } catch (SQLException ex1) {
+                logger.warn("Couldn't rollback", ex);
+            }
+        }finally {
+            try {
+                conn.close();
+            } catch (SQLException ex) {
+                logger.error("Error in DB", ex);
+            }
         }
         return "failed";
     }
 
+    @GetMapping(value = "/dbproj/user/inbox", produces = "application/json")
+    @ResponseBody
+    public Map<String, Object> printNotif(@RequestParam String token){
+        Connection conn = RestServiceApplication.getConnection();
+        Map<String, Object> content = new HashMap<>();
+        String user;
+        if(findToken(token) == null){
+            content.put("AuthError", "erro");
+            return content;
+        }else{
+            user = findToken(token);
+        }
+        try (PreparedStatement ps = conn.prepareStatement("SELECT mensagem FROM mensagem WHERE utilizador_username = ?")){
+            ps.setString(1, user);
+            ResultSet rows = ps.executeQuery();
+            conn.commit();
+            while (rows.next()){
+                content.put("mensagem", rows.getString("mensagem"));
+            }
+        } catch (SQLException ex) {
+            logger.error("error in DB", ex);
+            try {
+                conn.rollback();
+            } catch (SQLException ex1) {
+                logger.warn("Couldn't rollback", ex);
+            }
+        }finally {
+            try {
+                conn.close();
+            } catch (SQLException ex) {
+                logger.error("Error in DB", ex);
+            }
+        }
 
+        return content;
+    }
 
 }

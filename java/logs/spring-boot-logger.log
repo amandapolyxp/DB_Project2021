@@ -2325,3 +2325,20 @@ org.postgresql.util.PSQLException: The column index is out of range: 6, number o
 2021-05-31 17:04:55,099 INFO org.apache.juli.logging.DirectJDKLog [http-nio-8080-exec-2] Initializing Spring DispatcherServlet 'dispatcherServlet'
 2021-05-31 17:04:55,100 INFO org.springframework.web.servlet.FrameworkServlet [http-nio-8080-exec-2] Initializing Servlet 'dispatcherServlet'
 2021-05-31 17:04:55,103 INFO org.springframework.web.servlet.FrameworkServlet [http-nio-8080-exec-2] Completed initialization in 2 ms
+2021-05-31 21:30:51,908 INFO org.springframework.boot.StartupInfoLogger [main] Starting RestServiceApplication using Java 1.8.0_281 on DESKTOP-K7P58VI with PID 9120 (C:\Users\joaof\OneDrive\Ambiente de Trabalho\ProjBD\BD_Project2021\java\mvn-spring-boot\target\classes started by joaof in C:\Users\joaof\OneDrive\Ambiente de Trabalho\ProjBD\BD_Project2021\java)
+2021-05-31 21:30:51,913 DEBUG org.springframework.boot.StartupInfoLogger [main] Running with Spring Boot v2.5.0, Spring v5.3.7
+2021-05-31 21:30:51,913 INFO org.springframework.boot.SpringApplication [main] No active profile set, falling back to default profiles: default
+2021-05-31 21:30:53,351 INFO org.springframework.boot.web.embedded.tomcat.TomcatWebServer [main] Tomcat initialized with port(s): 8080 (http)
+2021-05-31 21:30:53,365 INFO org.apache.juli.logging.DirectJDKLog [main] Initializing ProtocolHandler ["http-nio-8080"]
+2021-05-31 21:30:53,367 INFO org.apache.juli.logging.DirectJDKLog [main] Starting service [Tomcat]
+2021-05-31 21:30:53,368 INFO org.apache.juli.logging.DirectJDKLog [main] Starting Servlet engine: [Apache Tomcat/9.0.44]
+2021-05-31 21:30:53,520 INFO org.apache.juli.logging.DirectJDKLog [main] Initializing Spring embedded WebApplicationContext
+2021-05-31 21:30:53,520 INFO org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext [main] Root WebApplicationContext: initialization completed in 1533 ms
+2021-05-31 21:30:53,989 INFO org.apache.juli.logging.DirectJDKLog [main] Starting ProtocolHandler ["http-nio-8080"]
+2021-05-31 21:30:54,015 INFO org.springframework.boot.web.embedded.tomcat.TomcatWebServer [main] Tomcat started on port(s): 8080 (http) with context path ''
+2021-05-31 21:30:54,029 INFO org.springframework.boot.StartupInfoLogger [main] Started RestServiceApplication in 3.096 seconds (JVM running for 4.68)
+2021-05-31 21:30:54,030 INFO org.springframework.boot.availability.ApplicationAvailabilityBean [main] Application availability state LivenessState changed to CORRECT
+2021-05-31 21:30:54,033 INFO org.springframework.boot.availability.ApplicationAvailabilityBean [main] Application availability state ReadinessState changed to ACCEPTING_TRAFFIC
+2021-05-31 21:31:00,167 INFO org.apache.juli.logging.DirectJDKLog [http-nio-8080-exec-2] Initializing Spring DispatcherServlet 'dispatcherServlet'
+2021-05-31 21:31:00,170 INFO org.springframework.web.servlet.FrameworkServlet [http-nio-8080-exec-2] Initializing Servlet 'dispatcherServlet'
+2021-05-31 21:31:00,176 INFO org.springframework.web.servlet.FrameworkServlet [http-nio-8080-exec-2] Completed initialization in 5 ms
